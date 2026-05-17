@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel compact">
+  <div>
+    <div class="eyebrow">Scan Detection</div>
+    <h2>扫描检测与本次结果</h2>
+    <p>扫描会读取历史基线，重新计算受保护目录内文件哈希，并检测删除、篡改、新增、可疑扩展名和批量变化。</p>
+  </div>
+</section>
+
+<section class="split-grid">
+  <article class="panel">
+    <h3>执行风险扫描</h3>
+    <p>检测范围固定为 demo_workspace/protected_files，不会访问真实系统敏感目录。</p>
+    <button id="run-scan" class="btn warning large">执行风险扫描</button>
+    <div id="scan-status" class="status-line">等待执行</div>
+  </article>
+  <article class="panel">
+    <h3>本次扫描统计</h3>
+    <div class="metrics-list">
+      <div><span>风险事件数量</span><strong id="scan-event-count">0</strong></div>
+      <div><span>是否批量变更</span><strong id="scan-bulk">否</strong></div>
+      <div><span>高敏感文件变化</span><strong id="scan-high">否</strong></div>
+    </div>
+    <div id="scan-levels" class="risk-bars compact"></div>
+  </article>
+</section>
+
+<article class="panel">
+  <div class="panel-title">
+    <div>
+      <h3>本次风险事件</h3>
+      <p>扫描后会在这里展示本次新增的事件记录。</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>等级</th>
+          <th>分值</th>
+          <th>类型</th>
+          <th>文件路径</th>
+          <th>证据摘要</th>
+        </tr>
+      </thead>
+      <tbody id="scan-events-body">
+        <tr><td colspan="5" class="empty">尚未扫描</td></tr>
+      </tbody>
+    </table>
+  </div>
+</article>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById("run-scan").addEventListener("click", async () => {
+  const status = document.getElementById("scan-status");
+  status.textContent = "正在扫描...";
+  const result = await apiRequest("/api/scan", { method: "POST" });
+  showMessage(result.message, result.success ? "success" : "error");
+  if (!result.success) {
+    status.textContent = result.message;
+    return;
+  }
+  const data = result.data;
+  status.textContent = "扫描完成";
+  document.getElementById("scan-event-count").textContent = data.event_count;
+  document.getElementById("scan-bulk").textContent = data.is_bulk_change ? "是" : "否";
+  document.getElementById("scan-high").textContent = data.has_high_sensitive_change ? "是" : "否";
+  renderRiskBars("scan-levels", data.level_distribution || {});
+  const body = document.getElementById("scan-events-body");
+  if (!data.events.length) {
+    body.innerHTML = "<tr><td colspan='5' class='empty'>未发现风险事件</td></tr>";
+    return;
+  }
+  body.innerHTML = data.events.map(event => `
+    <tr>
+      <td><span class="badge ${event.level.toLowerCase()}">${event.level}</span></td>
+      <td><strong>${event.score}</strong></td>
+      <td>${escapeHtml(event.event_type)}</td>
+      <td class="path-cell">${escapeHtml(event.relative_path)}</td>
+      <td>${escapeHtml(event.evidence)}</td>
+    </tr>
+  `).join("");
+});
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel compact">
+  <div>
+    <div class="eyebrow">Safe Simulation</div>
+    <h2>安全风险模拟</h2>
+    <p>所有模拟操作仅作用于 demo_workspace/protected_files。新增 suspicious.ps1 只写入无害文本，不会执行。</p>
+  </div>
+</section>
+
+<article class="panel alert-panel">
+  <h3>演示安全说明</h3>
+  <p>模拟删除、篡改、批量修改和新增脚本文件只用于触发防御性检测，不会访问或修改真实用户文件。</p>
+</article>
+
+<section class="action-grid">
+  <button class="btn danger large simulate-btn" data-case="modify">篡改财务文件</button>
+  <button class="btn danger large simulate-btn" data-case="delete">删除账号文件</button>
+  <button class="btn warning large simulate-btn" data-case="bulk">批量变更文件</button>
+  <button class="btn dark large simulate-btn" data-case="suspicious">新增可疑脚本</button>
+</section>
+
+<article class="panel">
+  <h3>操作结果</h3>
+  <div id="simulate-result" class="result-box">
+    <p class="result-placeholder">点击上方按钮后，这里会显示模拟对象、触发的风险场景和后续扫描建议。</p>
+  </div>
+</article>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll(".simulate-btn").forEach(button => {
+  button.addEventListener("click", async () => {
+    const caseName = button.dataset.case;
+    const result = await apiRequest("/api/simulate", {
+      method: "POST",
+      body: JSON.stringify({ case: caseName })
+    });
+    showMessage(result.message, result.success ? "success" : "error");
+    renderJsonResult("simulate-result", result);
+  });
+});
+</script>
+{% endblock %}

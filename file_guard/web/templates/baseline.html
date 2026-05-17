@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel compact">
+  <div>
+    <div class="eyebrow">Baseline Snapshot</div>
+    <h2>文件哈希基线</h2>
+    <p>基线记录初始化时每个受保护文件的路径、大小、修改时间、SHA-256 和敏感等级，是后续删除与篡改检测的可信参照。</p>
+  </div>
+</section>
+
+<article class="panel">
+  <div class="panel-title">
+    <div>
+      <h3>基线文件列表</h3>
+      <p>鼠标悬停在哈希短值上可查看完整 SHA-256。</p>
+    </div>
+    <button id="refresh-baseline" class="btn">刷新列表</button>
+  </div>
+  <div class="toolbar">
+    <input id="baseline-search" class="input" placeholder="搜索文件路径或文件名">
+    <select id="baseline-sensitivity" class="input select">
+      <option value="">全部敏感等级</option>
+      <option value="HIGH">HIGH</option>
+      <option value="MEDIUM">MEDIUM</option>
+      <option value="LOW">LOW</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>文件路径</th>
+          <th>文件名</th>
+          <th>扩展名</th>
+          <th>文件大小</th>
+          <th>敏感等级</th>
+          <th>SHA-256 前 16 位</th>
+          <th>修改时间</th>
+        </tr>
+      </thead>
+      <tbody id="baseline-body">
+        <tr><td colspan="7" class="empty">等待加载</td></tr>
+      </tbody>
+    </table>
+  </div>
+</article>
+{% endblock %}
+{% block scripts %}
+<script>
+let baselineFiles = [];
+
+function formatTime(seconds) {
+  if (!seconds) return "-";
+  return new Date(seconds * 1000).toLocaleString();
+}
+
+function renderBaselineTable() {
+  const keyword = document.getElementById("baseline-search").value.trim().toLowerCase();
+  const sensitivity = document.getElementById("baseline-sensitivity").value;
+  const body = document.getElementById("baseline-body");
+  const rows = baselineFiles.filter(file => {
+    const matchedKeyword = `${file.relative_path} ${file.file_name}`.toLowerCase().includes(keyword);
+    const matchedSensitivity = !sensitivity || file.sensitivity === sensitivity;
+    return matchedKeyword && matchedSensitivity;
+  });
+  if (!rows.length) {
+    body.innerHTML = "<tr><td colspan='7' class='empty'>暂无匹配文件</td></tr>";
+    return;
+  }
+  body.innerHTML = rows.map(file => `
+    <tr>
+      <td class="path-cell">${escapeHtml(file.relative_path)}</td>
+      <td>${escapeHtml(file.file_name)}</td>
+      <td>${escapeHtml(file.extension || "-")}</td>
+      <td>${escapeHtml(file.size_text)}</td>
+      <td><span class="badge ${file.sensitivity.toLowerCase()}">${file.sensitivity}</span></td>
+      <td title="${escapeHtml(file.sha256)}" class="mono">${escapeHtml(file.hash_short)}</td>
+      <td>${formatTime(file.mtime)}</td>
+    </tr>
+  `).join("");
+}
+
+async function loadBaseline() {
+  const result = await apiRequest("/api/baseline");
+  baselineFiles = result.data.files || [];
+  renderBaselineTable();
+}
+
+document.getElementById("baseline-search").addEventListener("input", renderBaselineTable);
+document.getElementById("baseline-sensitivity").addEventListener("change", renderBaselineTable);
+document.getElementById("refresh-baseline").addEventListener("click", loadBaseline);
+loadBaseline();
+</script>
+{% endblock %}

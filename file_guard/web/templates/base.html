@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} - File-Risk-Recovery-Guard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260517-align">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">FG</div>
+      <div>
+        <strong>File Guard</strong>
+        <span>Risk Recovery Console</span>
+      </div>
+    </div>
+    <nav class="nav" aria-label="主导航">
+      <a class="{{ 'active' if request.path == '/' else '' }}" href="/">仪表盘</a>
+      <a class="{{ 'active' if request.path == '/baseline' else '' }}" href="/baseline">基线文件</a>
+      <a class="{{ 'active' if request.path == '/events' else '' }}" href="/events">风险事件</a>
+      <a class="{{ 'active' if request.path == '/scan' else '' }}" href="/scan">扫描检测</a>
+      <a class="{{ 'active' if request.path == '/simulate' else '' }}" href="/simulate">模拟风险</a>
+      <a class="{{ 'active' if request.path == '/restore' else '' }}" href="/restore">文件恢复</a>
+      <a class="{{ 'active' if request.path == '/reports' else '' }}" href="/reports">报告导出</a>
+    </nav>
+    <div class="sidebar-note">
+      <span>安全边界</span>
+      <strong>仅操作 demo_workspace/protected_files</strong>
+    </div>
+  </aside>
+  <main class="app-main">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">本地安全风险验证系统</div>
+        <h1>{{ title }}</h1>
+        <p>基于文件哈希基线的敏感文件异常删除、篡改检测与恢复验证系统</p>
+      </div>
+      <div class="topbar-status">
+        <span>监听地址</span>
+        <strong>127.0.0.1:5000</strong>
+      </div>
+    </header>
+    <section id="message-area" class="message-area" aria-live="polite"></section>
+    <section class="content">
+      {% block content %}{% endblock %}
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/actions.js') }}?v=20260517-align"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

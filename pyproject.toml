@@ -1,0 +1,13 @@
+[project]
+name = "file-risk-recovery-guard"
+version = "1.0.0"
+description = "File hash baseline based sensitive file delete and tamper detection demo system."
+requires-python = ">=3.10"
+dependencies = [
+    "Flask>=3.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

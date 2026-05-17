@@ -1,0 +1,22 @@
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Runtime database, logs, and local web process files
+data/*.db
+data/backups/*
+!data/backups/.gitkeep
+data/test_backups/
+outputs/*.log
+outputs/*.pid
+outputs/*
+!outputs/.gitkeep
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

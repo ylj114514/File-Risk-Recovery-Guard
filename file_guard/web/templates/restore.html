@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel compact">
+  <div>
+    <div class="eyebrow">Recovery Verify</div>
+    <h2>备份恢复与哈希校验</h2>
+    <p>恢复过程会先校验路径安全，再从 data/backups 复制文件，最后重新计算 SHA-256 与基线哈希进行比对。</p>
+  </div>
+</section>
+
+<section class="split-grid">
+  <article class="panel">
+    <h3>恢复指定文件</h3>
+    <p>请输入受保护目录内的安全相对路径，示例：account_list.txt。</p>
+    <label class="form-label" for="restore-path">文件相对路径</label>
+    <input id="restore-path" class="input" value="account_list.txt" placeholder="account_list.txt">
+    <button id="restore-button" class="btn success large">恢复并校验</button>
+  </article>
+  <article class="panel alert-panel">
+    <h3>路径安全规则</h3>
+    <p>禁止 ../、绝对路径和路径穿越。恢复目标固定在 demo_workspace/protected_files。</p>
+  </article>
+</section>
+
+<article class="panel">
+  <h3>恢复结果</h3>
+  <div id="restore-result" class="result-box">
+    <p class="result-placeholder">恢复执行后，这里会显示恢复路径、备份来源和哈希校验是否通过。</p>
+  </div>
+</article>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById("restore-button").addEventListener("click", async () => {
+  const path = document.getElementById("restore-path").value.trim();
+  const result = await apiRequest("/api/restore", {
+    method: "POST",
+    body: JSON.stringify({ path })
+  });
+  showMessage(result.message, result.success ? "success" : "error");
+  renderJsonResult("restore-result", result);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel compact">
+  <div>
+    <div class="eyebrow">Risk Evidence</div>
+    <h2>风险事件证据台账</h2>
+    <p>每条记录包含触发条件、哈希变化、文件大小变化、风险规则命中情况和防护建议，适合直接截图放入课程报告。</p>
+  </div>
+</section>
+
+<article class="panel">
+  <div class="panel-title">
+    <div>
+      <h3>风险事件列表</h3>
+      <p>点击任意事件行可展开 old_hash、new_hash、old_size、new_size 和完整证据。</p>
+    </div>
+    <button id="refresh-events" class="btn">刷新事件</button>
+  </div>
+  <div class="toolbar">
+    <select id="level-filter" class="input select">
+      <option value="">全部风险等级</option>
+      <option value="CRITICAL">CRITICAL</option>
+      <option value="HIGH">HIGH</option>
+      <option value="MEDIUM">MEDIUM</option>
+      <option value="LOW">LOW</option>
+    </select>
+    <select id="type-filter" class="input select">
+      <option value="">全部事件类型</option>
+      <option value="DELETED">DELETED</option>
+      <option value="MODIFIED">MODIFIED</option>
+      <option value="CREATED">CREATED</option>
+      <option value="SUSPICIOUS_EXTENSION">SUSPICIOUS_EXTENSION</option>
+      <option value="HIGH_SENSITIVE_CHANGED">HIGH_SENSITIVE_CHANGED</option>
+      <option value="BULK_CHANGE">BULK_CHANGE</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>风险等级</th>
+          <th>风险分值</th>
+          <th>事件类型</th>
+          <th>文件路径</th>
+          <th>风险证据</th>
+          <th>防护建议</th>
+          <th>检测时间</th>
+        </tr>
+      </thead>
+      <tbody id="events-body">
+        <tr><td colspan="7" class="empty">等待加载</td></tr>
+      </tbody>
+    </table>
+  </div>
+</article>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/events.js') }}?v=20260517-align"></script>
+{% endblock %}

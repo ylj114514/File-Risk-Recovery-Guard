@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel">
+  <div>
+    <div class="eyebrow">File-Risk-Recovery-Guard</div>
+    <h2>敏感文件异常删除、篡改与恢复验证控制台</h2>
+    <p>系统通过 SHA-256 基线、SQLite 事件记录、风险评分和备份恢复验证，把本地敏感文件风险转化为可观察、可截图、可报告的证据链。</p>
+  </div>
+  <div class="hero-meta">
+    <span>演示目录</span>
+    <strong>demo_workspace/protected_files</strong>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <span>受保护文件</span>
+    <strong id="protected-file-count">0</strong>
+    <em>当前基线覆盖数量</em>
+  </article>
+  <article class="stat-card">
+    <span>风险事件</span>
+    <strong id="risk-event-count">0</strong>
+    <em>数据库累计记录</em>
+  </article>
+  <article class="stat-card high">
+    <span>HIGH 事件</span>
+    <strong id="high-event-count">0</strong>
+    <em>需要重点复核</em>
+  </article>
+  <article class="stat-card critical">
+    <span>CRITICAL 事件</span>
+    <strong id="critical-event-count">0</strong>
+    <em>建议立即恢复验证</em>
+  </article>
+</section>
+
+<section class="split-grid dashboard-split">
+  <article class="panel">
+    <div class="panel-title">
+      <div>
+        <h3>风险等级分布</h3>
+        <p>按 LOW、MEDIUM、HIGH、CRITICAL 汇总历史事件。</p>
+      </div>
+      <span id="latest-event-time" class="soft-pill">最近检测：暂无</span>
+    </div>
+    <div id="risk-distribution" class="risk-bars"></div>
+  </article>
+  <article class="panel">
+    <div class="panel-title">
+      <div>
+        <h3>演示快捷操作</h3>
+        <p>按课程汇报流程依次创建环境、初始化基线、执行扫描并导出报告。</p>
+      </div>
+    </div>
+    <div class="action-row">
+      <button id="btn-demo-init" class="btn primary">创建演示环境</button>
+      <button id="btn-baseline-init" class="btn">初始化基线</button>
+      <button id="btn-scan" class="btn warning">执行风险扫描</button>
+      <button id="btn-report" class="btn success">生成报告</button>
+    </div>
+    <div id="dashboard-action-result" class="result-box small dashboard-result">
+      <p class="result-placeholder">操作完成后，这里会显示执行摘要、影响范围和下一步建议。</p>
+    </div>
+  </article>
+</section>
+
+<article class="panel">
+  <div class="panel-title">
+    <div>
+      <h3>最近风险事件</h3>
+      <p>展示最新 5 条事件，便于课堂演示时快速说明风险对象、等级和时间。</p>
+    </div>
+    <a class="text-link" href="/events">查看全部</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>等级</th>
+          <th>分值</th>
+          <th>类型</th>
+          <th>文件路径</th>
+          <th>检测时间</th>
+        </tr>
+      </thead>
+      <tbody id="latest-events-body">
+        <tr><td colspan="5" class="empty">暂无风险事件</td></tr>
+      </tbody>
+    </table>
+  </div>
+</article>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}?v=20260517-align"></script>
+{% endblock %}

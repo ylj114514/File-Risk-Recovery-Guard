@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel compact">
+  <div>
+    <div class="eyebrow">Report Export</div>
+    <h2>风险报告导出</h2>
+    <p>导出 JSON、CSV 和 HTML 报告，HTML 版本包含事件表格、风险证据、影响分析和防护建议，可直接用于课程 PDF 截图。</p>
+  </div>
+</section>
+
+<section class="split-grid">
+  <article class="panel">
+    <h3>生成报告文件</h3>
+    <p>三个按钮都会触发统一导出流程，生成 outputs/events.json、outputs/events.csv 和 outputs/report.html。</p>
+    <div class="action-row">
+      <button id="export-json" class="btn primary">导出 JSON</button>
+      <button id="export-csv" class="btn primary">导出 CSV</button>
+      <button id="export-html" class="btn success">生成 HTML 报告</button>
+      <a class="btn link-button" href="/reports/html" target="_blank">查看 HTML 报告</a>
+    </div>
+  </article>
+  <article class="panel">
+    <h3>输出文件</h3>
+    <ul class="file-list">
+      <li>outputs/events.json</li>
+      <li>outputs/events.csv</li>
+      <li>outputs/report.html</li>
+    </ul>
+  </article>
+</section>
+
+<article class="panel">
+  <h3>报告生成结果</h3>
+  <div id="report-result" class="result-box">
+    <p class="result-placeholder">报告生成后，这里会显示导出文件路径、事件数量和截图使用建议。</p>
+  </div>
+</article>
+{% endblock %}
+{% block scripts %}
+<script>
+async function exportReports() {
+  const result = await apiRequest("/api/report", { method: "POST" });
+  showMessage(result.message, result.success ? "success" : "error");
+  renderJsonResult("report-result", result);
+}
+["export-json", "export-csv", "export-html"].forEach(id => {
+  document.getElementById(id).addEventListener("click", exportReports);
+});
+</script>
+{% endblock %}
