@@ -17,7 +17,14 @@ from ..demo import (
     simulate_suspicious_file,
 )
 from ..detector import detect_bulk_change, detect_changes, enrich_special_events
-from ..reporter import export_events_csv, export_events_json, generate_html_report, load_events_from_db, save_events_to_db
+from ..reporter import (
+    clear_events,
+    export_events_csv,
+    export_events_json,
+    generate_html_report,
+    load_events_from_db,
+    save_events_to_db,
+)
 from ..risk_engine import build_risk_event
 from ..scanner import scan_directory
 from ..utils import ensure_dir, human_size, is_safe_relative_path
@@ -29,6 +36,7 @@ def _response(success: bool, message: str, data: dict | None = None) -> dict:
 
 
 def _level_distribution(events: list) -> dict[str, int]:
+    """Count risk events by level."""
     counts = {"LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0}
     for event in events:
         counts[event.level] = counts.get(event.level, 0) + 1
@@ -36,9 +44,7 @@ def _level_distribution(events: list) -> dict[str, int]:
 
 
 def get_system_status() -> dict:
-    """
-    返回系统状态统计。
-    """
+    """Return dashboard statistics."""
     init_database(DB_PATH)
     baseline_count = get_baseline_count(DB_PATH)
     events = load_events_from_db(DB_PATH)
@@ -56,9 +62,7 @@ def get_system_status() -> dict:
 
 
 def get_baseline_files() -> list[dict]:
-    """
-    返回基线文件列表。
-    """
+    """Return baseline files for the Web page."""
     baseline = load_baseline(DB_PATH)
     files = []
     for snapshot in baseline.values():
@@ -70,27 +74,25 @@ def get_baseline_files() -> list[dict]:
 
 
 def get_risk_events() -> list[dict]:
-    """
-    返回风险事件列表。
-    """
+    """Return persisted risk events."""
     return [event.to_dict() for event in load_events_from_db(DB_PATH)]
 
 
 def run_demo_init() -> dict:
-    """
-    创建演示环境。
-    """
+    """Create the demo workspace and safe sample files."""
     try:
         root = create_demo_workspace(DEMO_WORKSPACE_DIR)
-        return _response(True, "演示环境创建成功。", {"root": str(root), "file_count": len(list(root.glob('*')))})
+        return _response(
+            True,
+            "演示环境创建成功。",
+            {"root": str(root), "file_count": len(list(root.glob("*")))},
+        )
     except Exception as exc:
         return _response(False, f"演示环境创建失败：{exc}", None)
 
 
 def run_baseline_init() -> dict:
-    """
-    初始化基线。
-    """
+    """Initialize file hash baseline and backup all baseline files."""
     try:
         init_database(DB_PATH)
         snapshots = scan_directory(PROTECTED_DIR)
@@ -106,9 +108,7 @@ def run_baseline_init() -> dict:
 
 
 def run_scan() -> dict:
-    """
-    执行扫描检测。
-    """
+    """Scan current files, detect changes, calculate risk, and persist events."""
     try:
         init_database(DB_PATH)
         baseline = load_baseline(DB_PATH)
@@ -135,33 +135,93 @@ def run_scan() -> dict:
 
 
 def run_simulation(case: str) -> dict:
-    """
-    执行安全模拟。
-    """
+    """Run one safe local risk simulation."""
     try:
         if case == "modify":
             simulate_modify(PROTECTED_DIR)
             message = "已模拟篡改 finance_report.txt。"
+            target = "finance_report.txt"
         elif case == "delete":
             simulate_delete(PROTECTED_DIR)
             message = "已模拟删除 account_list.txt。"
+            target = "account_list.txt"
         elif case == "bulk":
             simulate_bulk_change(PROTECTED_DIR)
             message = "已模拟批量变更 3 个文件。"
+            target = "finance_report.txt、contract_2025.txt、project_plan.txt"
         elif case == "suspicious":
             simulate_suspicious_file(PROTECTED_DIR)
             message = "已模拟新增 suspicious.ps1，无害文本，未执行。"
+            target = "suspicious.ps1"
         else:
             return _response(False, "不支持的模拟类型。", None)
-        return _response(True, message, {"case": case})
+        return _response(True, message, {"case": case, "target": target, "scope": str(PROTECTED_DIR)})
     except Exception as exc:
         return _response(False, f"模拟失败：{exc}", None)
 
 
+def run_simulation_recover() -> dict:
+    """Recover demo files to the saved baseline and remove simulated new files."""
+    try:
+        init_database(DB_PATH)
+        baseline = load_baseline(DB_PATH)
+        if not baseline:
+            return _response(False, "尚未初始化基线，无法按基线复原模拟事件。", None)
+
+        restored: list[str] = []
+        failed: list[str] = []
+        for relative_path in baseline:
+            try:
+                if restore_file(PROTECTED_DIR, BACKUP_DIR, relative_path):
+                    verified, _ = verify_restored_file(PROTECTED_DIR, baseline, relative_path)
+                    if verified:
+                        restored.append(relative_path)
+                    else:
+                        failed.append(relative_path)
+                else:
+                    failed.append(relative_path)
+            except Exception:
+                failed.append(relative_path)
+
+        current = scan_directory(PROTECTED_DIR)
+        removed_created: list[str] = []
+        protected_root = PROTECTED_DIR.resolve(strict=False)
+        for relative_path in sorted(set(current) - set(baseline)):
+            if not is_safe_relative_path(relative_path):
+                continue
+            target = (PROTECTED_DIR / relative_path).resolve(strict=False)
+            try:
+                target.relative_to(protected_root)
+                if target.is_file():
+                    target.unlink()
+                    removed_created.append(relative_path)
+            except (OSError, ValueError):
+                failed.append(relative_path)
+
+        clear_events(DB_PATH)
+        message = "模拟影响已复原，受保护目录已恢复到基线状态。"
+        if failed:
+            return _response(
+                False,
+                "部分文件复原失败，请查看详情。",
+                {"restored_files": restored, "removed_created_files": removed_created, "failed_files": failed},
+            )
+        return _response(
+            True,
+            message,
+            {
+                "restored_files": restored,
+                "removed_created_files": removed_created,
+                "cleared_events": True,
+                "baseline_files": len(baseline),
+            },
+        )
+    except Exception as exc:
+        return _response(False, f"复原模拟影响失败：{exc}", None)
+
+
 def run_restore(relative_path: str) -> dict:
-    """
-    恢复指定文件。
-    """
+    """Restore one baseline file from backup and verify its hash."""
     if not is_safe_relative_path(relative_path):
         return _response(False, "非法路径，禁止 ../、绝对路径和路径穿越。", None)
     try:
@@ -182,9 +242,7 @@ def run_restore(relative_path: str) -> dict:
 
 
 def run_report_export() -> dict:
-    """
-    导出 JSON、CSV、HTML 报告。
-    """
+    """Export JSON, CSV, and HTML reports."""
     try:
         events = load_events_from_db(DB_PATH)
         ensure_dir(OUTPUT_DIR)
@@ -197,21 +255,14 @@ def run_report_export() -> dict:
         return _response(
             True,
             "报告导出成功。",
-            {
-                "json": str(json_path),
-                "csv": str(csv_path),
-                "html": str(html_path),
-                "event_count": len(events),
-            },
+            {"json": str(json_path), "csv": str(csv_path), "html": str(html_path), "event_count": len(events)},
         )
     except Exception as exc:
         return _response(False, f"报告导出失败：{exc}", None)
 
 
 def run_reset() -> dict:
-    """
-    重置演示环境。
-    """
+    """Reset demo workspace, database, backups, and outputs."""
     try:
         reset_demo_workspace(DEMO_WORKSPACE_DIR)
         if DB_PATH.exists():

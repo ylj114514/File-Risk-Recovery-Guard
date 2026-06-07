@@ -33,6 +33,10 @@ def test_service_demo_flow():
     assert scan_result["success"] is True
     assert scan_result["data"]["event_count"] >= 1
 
+    recover_result = services.run_simulation_recover()
+    assert recover_result["success"] is True
+    assert recover_result["data"]["cleared_events"] is True
+
     invalid_restore = services.run_restore("../outside.txt")
     assert invalid_restore["success"] is False
 

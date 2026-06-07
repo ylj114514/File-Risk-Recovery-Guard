@@ -4,7 +4,7 @@
   <div>
     <div class="eyebrow">Recovery Verify</div>
     <h2>备份恢复与哈希校验</h2>
-    <p>恢复过程会先校验路径安全，再从 data/backups 复制文件，最后重新计算 SHA-256 与基线哈希进行比对。</p>
+    <p>恢复过程会先校验路径安全，再从 data/backups 复制文件，最后重新计算 SHA-256 并与基线哈希进行比对。</p>
   </div>
 </section>
 
@@ -25,13 +25,13 @@
 <article class="panel">
   <h3>恢复结果</h3>
   <div id="restore-result" class="result-box">
-    <p class="result-placeholder">恢复执行后，这里会显示恢复路径、备份来源和哈希校验是否通过。</p>
+    <p class="result-placeholder">恢复执行后，这里会按纵向字段展示恢复路径、校验结果和说明文本。</p>
   </div>
 </article>
 {% endblock %}
 {% block scripts %}
 <script>
-document.getElementById("restore-button").addEventListener("click", async () => {
+async function restoreAndRender() {
   const path = document.getElementById("restore-path").value.trim();
   const result = await apiRequest("/api/restore", {
     method: "POST",
@@ -39,6 +39,14 @@ document.getElementById("restore-button").addEventListener("click", async () => 
   });
   showMessage(result.message, result.success ? "success" : "error");
   renderJsonResult("restore-result", result);
-});
+}
+
+document.getElementById("restore-button").addEventListener("click", restoreAndRender);
+const restoreParams = new URLSearchParams(window.location.search);
+if (restoreParams.get("autorun") === "1") {
+  const autoPath = restoreParams.get("path");
+  if (autoPath) document.getElementById("restore-path").value = autoPath;
+  window.addEventListener("load", () => setTimeout(restoreAndRender, 300));
+}
 </script>
 {% endblock %}

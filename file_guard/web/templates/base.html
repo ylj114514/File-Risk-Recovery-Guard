@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }} - File-Risk-Recovery-Guard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260517-align">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260603-card-report">
 </head>
 <body>
   <aside class="sidebar">
@@ -38,7 +38,7 @@
       </div>
       <div class="topbar-status">
         <span>监听地址</span>
-        <strong>127.0.0.1:5000</strong>
+        <strong>{{ request.host }}</strong>
       </div>
     </header>
     <section id="message-area" class="message-area" aria-live="polite"></section>
@@ -46,7 +46,7 @@
       {% block content %}{% endblock %}
     </section>
   </main>
-  <script src="{{ url_for('static', filename='js/actions.js') }}?v=20260517-align"></script>
+  <script src="{{ url_for('static', filename='js/actions.js') }}?v=20260603-card-report"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

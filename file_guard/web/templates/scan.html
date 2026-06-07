@@ -30,30 +30,17 @@
   <div class="panel-title">
     <div>
       <h3>本次风险事件</h3>
-      <p>扫描后会在这里展示本次新增的事件记录。</p>
+      <p>扫描后会在这里展示本次新增的事件记录。每条事件使用纵向证据卡片展示，避免哈希、路径和规则混在同一段文字里。</p>
     </div>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>等级</th>
-          <th>分值</th>
-          <th>类型</th>
-          <th>文件路径</th>
-          <th>证据摘要</th>
-        </tr>
-      </thead>
-      <tbody id="scan-events-body">
-        <tr><td colspan="5" class="empty">尚未扫描</td></tr>
-      </tbody>
-    </table>
+  <div id="scan-events-body" class="event-card-list">
+    <div class="empty">尚未扫描</div>
   </div>
 </article>
 {% endblock %}
 {% block scripts %}
 <script>
-document.getElementById("run-scan").addEventListener("click", async () => {
+async function runScanAndRender() {
   const status = document.getElementById("scan-status");
   status.textContent = "正在扫描...";
   const result = await apiRequest("/api/scan", { method: "POST" });
@@ -68,20 +55,18 @@ document.getElementById("run-scan").addEventListener("click", async () => {
   document.getElementById("scan-bulk").textContent = data.is_bulk_change ? "是" : "否";
   document.getElementById("scan-high").textContent = data.has_high_sensitive_change ? "是" : "否";
   renderRiskBars("scan-levels", data.level_distribution || {});
+
   const body = document.getElementById("scan-events-body");
   if (!data.events.length) {
-    body.innerHTML = "<tr><td colspan='5' class='empty'>未发现风险事件</td></tr>";
+    body.innerHTML = "<div class='empty'>未发现风险事件</div>";
     return;
   }
-  body.innerHTML = data.events.map(event => `
-    <tr>
-      <td><span class="badge ${event.level.toLowerCase()}">${event.level}</span></td>
-      <td><strong>${event.score}</strong></td>
-      <td>${escapeHtml(event.event_type)}</td>
-      <td class="path-cell">${escapeHtml(event.relative_path)}</td>
-      <td>${escapeHtml(event.evidence)}</td>
-    </tr>
-  `).join("");
-});
+  body.innerHTML = data.events.map(event => renderRiskEventCard(event, { compact: false })).join("");
+}
+
+document.getElementById("run-scan").addEventListener("click", runScanAndRender);
+if (new URLSearchParams(window.location.search).get("autorun") === "1") {
+  window.addEventListener("load", () => setTimeout(runScanAndRender, 300));
+}
 </script>
 {% endblock %}

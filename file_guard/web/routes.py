@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from flask import Blueprint, jsonify, render_template, request, send_file
 
 from ..config import OUTPUT_DIR
@@ -14,14 +12,17 @@ bp = Blueprint("file_guard", __name__)
 
 
 def _ok(message: str, data: object | None = None):
+    """Return a successful JSON response."""
     return jsonify({"success": True, "message": message, "data": data or {}})
 
 
 def _fail(message: str, status: int = 400):
+    """Return a failed JSON response."""
     return jsonify({"success": False, "message": message, "data": None}), status
 
 
 def _service_response(result: dict):
+    """Convert service response dictionaries to Flask responses."""
     status = 200 if result.get("success") else 400
     return jsonify(result), status
 
@@ -109,6 +110,12 @@ def api_simulate():
     if not case:
         return _fail("缺少模拟类型 case。")
     return _service_response(services.run_simulation(str(case)))
+
+
+@bp.post("/api/simulation/recover")
+def api_simulation_recover():
+    """Recover the demo workspace from simulated changes."""
+    return _service_response(services.run_simulation_recover())
 
 
 @bp.post("/api/restore")

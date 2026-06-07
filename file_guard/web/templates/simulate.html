@@ -4,26 +4,51 @@
   <div>
     <div class="eyebrow">Safe Simulation</div>
     <h2>安全风险模拟</h2>
-    <p>所有模拟操作仅作用于 demo_workspace/protected_files。新增 suspicious.ps1 只写入无害文本，不会执行。</p>
+    <p>所有模拟操作仅作用于 demo_workspace/protected_files。新增 suspicious.ps1 只写入无害文本，不会执行脚本。</p>
+  </div>
+  <div class="hero-meta">
+    <span>演示目标</span>
+    <strong>触发风险，再复原影响</strong>
   </div>
 </section>
 
 <article class="panel alert-panel">
   <h3>演示安全说明</h3>
-  <p>模拟删除、篡改、批量修改和新增脚本文件只用于触发防御性检测，不会访问或修改真实用户文件。</p>
+  <p>本页面用于模拟删除、篡改、批量修改和新增可疑扩展名文件。所有行为都限制在本项目演示目录中，不会访问真实系统敏感目录，也不会修改真实用户文件。</p>
+  <p>完成模拟和扫描后，可以点击“复原模拟影响”按钮。系统会根据已保存的哈希基线和备份恢复文件，同时删除模拟新增的可疑文件，并清空当前风险事件记录，便于重新演示。</p>
 </article>
 
-<section class="action-grid">
-  <button class="btn danger large simulate-btn" data-case="modify">篡改财务文件</button>
-  <button class="btn danger large simulate-btn" data-case="delete">删除账号文件</button>
-  <button class="btn warning large simulate-btn" data-case="bulk">批量变更文件</button>
-  <button class="btn dark large simulate-btn" data-case="suspicious">新增可疑脚本</button>
+<section class="simulate-layout">
+  <article class="panel">
+    <div class="panel-title">
+      <div>
+        <h3>风险场景按钮</h3>
+        <p>点击任一按钮后，再进入“扫描检测”页面执行扫描，即可看到对应风险事件。</p>
+      </div>
+    </div>
+    <section class="action-grid">
+      <button class="btn danger large simulate-btn" data-case="modify">篡改财务文件</button>
+      <button class="btn danger large simulate-btn" data-case="delete">删除账号文件</button>
+      <button class="btn warning large simulate-btn" data-case="bulk">批量变更文件</button>
+      <button class="btn dark large simulate-btn" data-case="suspicious">新增可疑脚本</button>
+    </section>
+  </article>
+
+  <article class="panel recovery-panel">
+    <div class="panel-title">
+      <div>
+        <h3>复原模拟影响</h3>
+        <p>用于课堂重复演示：恢复基线文件、删除新增可疑文件、清空风险事件记录。</p>
+      </div>
+    </div>
+    <button id="recover-simulation-button" class="btn success large">复原模拟影响</button>
+  </article>
 </section>
 
 <article class="panel">
   <h3>操作结果</h3>
   <div id="simulate-result" class="result-box">
-    <p class="result-placeholder">点击上方按钮后，这里会显示模拟对象、触发的风险场景和后续扫描建议。</p>
+    <p class="result-placeholder">点击上方按钮后，这里会显示模拟对象、触发的风险场景、复原范围和后续演示建议。</p>
   </div>
 </article>
 {% endblock %}
@@ -39,6 +64,12 @@ document.querySelectorAll(".simulate-btn").forEach(button => {
     showMessage(result.message, result.success ? "success" : "error");
     renderJsonResult("simulate-result", result);
   });
+});
+
+document.getElementById("recover-simulation-button").addEventListener("click", async () => {
+  const result = await apiRequest("/api/simulation/recover", { method: "POST" });
+  showMessage(result.message, result.success ? "success" : "error");
+  renderJsonResult("simulate-result", result);
 });
 </script>
 {% endblock %}
